@@ -95,7 +95,12 @@ def check_vendors_on_page(url, vendors):
 
     response, _ = make_request(url, tries=2)
     if response and 'text/html' in response.headers.get('Content-Type', '').lower():
-        soup = BeautifulSoup(response.text, 'html.parser')
+        try:  # ensure the response is parseable
+            soup = BeautifulSoup(response.text, 'html.parser')
+        except Exception as e:
+            logging.error(f"Error parsing HTML for {url}: {e}")
+            return set()
+
         links = soup.find_all('a', href=True)
         vendors_found = set()
 
@@ -151,7 +156,7 @@ def process_website(lead_id, website, vendor_list):
 
 def main():
 
-    df = pd.read_excel('Batch Re-Update New 01.xlsx').iloc[0:3000]
+    df = pd.read_excel('cv_rem.xlsx')
 
     websites = df[['lead_id', 'website']].astype(str)
 
@@ -163,7 +168,7 @@ def main():
         processed_websites = [future.result() for future in futures]
 
     df = pd.DataFrame(processed_websites)
-    df.to_excel('Batch Re-Update output_batch_1.xlsx', index=False)
+    df.to_excel('cv_rem_output.xlsx', index=False)
 
 
 if __name__ == "__main__":
